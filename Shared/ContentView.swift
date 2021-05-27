@@ -41,6 +41,25 @@ enum CalcButton: String {
             return .gray
         }
     }
+    
+    var buttonInfo: String {
+        switch self{
+        case .add:
+            return "+"
+        default:
+            return rawValue
+        }
+    }
+    var buttonImage: String {
+        switch self {
+        case .add:
+            return "add"
+        
+        default:
+            return "minus"
+        }
+    }
+
 }
 
 enum Operation {
@@ -57,7 +76,7 @@ struct ContentView: View {
     
     @State var cActive = "0"
     
-    @State var runningNumber = 0
+    @State var runningNumber = Decimal(0)
     
     @State var currentOperation: Operation = .none
     
@@ -74,17 +93,18 @@ struct ContentView: View {
         ZStack{
             Color.black.edgesIgnoringSafeArea(/*@START_MENU_TOKEN@*/.all/*@END_MENU_TOKEN@*/)
             
-            VStack{
+            VStack {
                 Text("+calculator")
                     .foregroundColor(.blue)
                     .font(.system(size:30))
                     .bold()
+                    .position(x: 192, y: -3)
                 Spacer()
                 // Text
              
                 HStack{
                     Spacer()
-                    VStack (spacing: 1){
+                    VStack (spacing: 10){
                         Text(oldest_value)
                             .font(.system(size: 22))
                             .foregroundColor(Color(hue: 1.0, saturation: 0.023,brightness: 0.356, opacity: 1.0))
@@ -112,15 +132,18 @@ struct ContentView: View {
                             Button(action : {
                                 self.didTap(button: item)
                             }, label: {
-                        
-                                Text(item.rawValue)
-                                    .frame(
-                                        width: self.buttonWidth(item: item),
-                                        height: self.buttonHeight(item: item))
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 32))
-                                    .background(item.buttonColor)
-                                    .border(Color.black, width: 0.5)
+                                HStack {
+                                    Text(item.buttonInfo)
+                                    //Image(item.buttonImage)
+                                }
+                                .frame(
+                                    width: self.buttonWidth(item: item),
+                                    height: self.buttonHeight(item: item))
+                                .foregroundColor(.white)
+                                .font(.system(size: 32))
+                                .background(item.buttonColor)
+                                .border(Color.black, width: 0.5)
+                                
                             });
                        
                         }
@@ -130,40 +153,51 @@ struct ContentView: View {
             }
         }
     }
-    
+        
     func didTap(button: CalcButton){
+        
+        if self.value.contains("Error"){
+            self.value = "0"
+        }
         
         switch button {
         
         case .add, .subtract, .multiply, .divide, .equal:
         if button == .add{
             self.currentOperation = .add
-            self.runningNumber = Int(self.value) ?? 0
+            self.runningNumber = Decimal(string: self.value) ?? 0
         }
         else if button == .subtract{
             self.currentOperation = .subtract
-            self.runningNumber = Int(self.value) ?? 0
+            self.runningNumber = Decimal(string: self.value) ?? 0
         }
         else if button == .multiply{
             self.currentOperation = .multiply
-            self.runningNumber = Int(self.value) ?? 0
+            self.runningNumber = Decimal(string: self.value) ?? 0
         }
         else if button == .divide{
             self.currentOperation = .divide
-            self.runningNumber = Int(self.value) ?? 0
+            self.runningNumber = Decimal(string: self.value) ?? 0
         }
         else if button == .equal{
             
-            let runningValue = Int(self.runningNumber)
-            let currentValue = Int(self.value) ?? 0
+            // let runningValue = Int(self.runningNumber)
+            let runningValue = self.runningNumber
+            // let currentValue = Int(self.value) ?? 0
+            let currentValue = Decimal(string: self.value)
+            
             switch self.currentOperation {
-            case .add: self.value = "\(runningValue + currentValue)"
-            case .subtract: self.value = "\(runningValue - currentValue)"
-            case .multiply: self.value = "\(runningValue * currentValue)"
-            case .divide: self.value = "\(runningValue / currentValue)"
-        
-            case .none:
-                break
+            
+                case .add:
+                    let result = (runningValue + currentValue!)
+                    self.value = "\(result)"
+                    
+                case .subtract: self.value = "\(runningValue - currentValue!)"
+                case .multiply: self.value = "\(runningValue * currentValue!)"
+                case .divide: self.value = "\(runningValue / currentValue!)"
+
+                case .none:
+                    break
             }
             
             self.oldest_value = self.older_value
@@ -171,9 +205,23 @@ struct ContentView: View {
             self.old_value = self.value
         }
             
+        if self.value == "NaN" {
+            self.value = "Error"
+        }
+            
         if button != .equal {
             self.value = "0"
         }
+            
+       
+        
+        case .decimal:
+            if self.value.contains(".") {
+                self.value = "Error"
+            }
+            else{
+                self.value = "\(self.value)."
+            }
             
         case .clear:
             
@@ -190,13 +238,20 @@ struct ContentView: View {
             self.value = "0"
             self.runningNumber = 0
 
+        case .answer:
+            self.value = "\(self.runningNumber)"
             
-        case .answer, .e, .power, .log, .decimal, .delete:
+        case .power, .log, .delete:
             break
         
         case .pi:
-            self.value = "3.1415"
+            // aproximaciones
+            self.value = "3.141593"
             
+        case .e:
+            // aproximaciones
+            self.value = "2.718282"
+        
         default:
             let number = button.rawValue
             
